@@ -67,15 +67,13 @@ func BenchmarkEncodingLengthForStorage(b *testing.B) {
 	b.ResetTimer()
 	for _, test := range accountCases {
 		b.Run(fmt.Sprint(test.name), func(b *testing.B) {
-			lengths := make([]uint, b.N)
+			var length uint
 
-			for i := 0; i < b.N; i++ {
-				b.StartTimer()
-				lengths[i] = test.acc.EncodingLengthForStorage()
-				b.StopTimer()
+			for b.Loop() {
+				length = test.acc.EncodingLengthForStorage()
 			}
 
-			fmt.Fprint(io.Discard, lengths)
+			fmt.Fprint(io.Discard, length)
 		})
 	}
 }
@@ -119,15 +117,13 @@ func BenchmarkEncodingLengthForHashing(b *testing.B) {
 	b.ResetTimer()
 	for _, test := range accountCases {
 		b.Run(fmt.Sprint(test.name), func(bn *testing.B) {
-			lengths := make([]uint, bn.N)
+			var length uint
 
-			for i := 0; i < bn.N; i++ {
-				bn.StartTimer()
-				lengths[i] = test.acc.EncodingLengthForHashing()
-				bn.StopTimer()
+			for bn.Loop() {
+				length = test.acc.EncodingLengthForHashing()
 			}
 
-			fmt.Fprint(io.Discard, lengths)
+			fmt.Fprint(io.Discard, length)
 		})
 
 	}
@@ -175,7 +171,7 @@ func BenchmarkEncodingAccountForStorage(b *testing.B) {
 
 		//buf := make([]byte, test.acc.EncodingLengthForStorage())
 		b.Run(fmt.Sprint(test.name), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				SerialiseV3(test.acc)
 				//test.acc.EncodeForStorage(buf) performance has degraded a bit because we are not using the same buf now
 			}
@@ -227,9 +223,9 @@ func BenchmarkEncodingAccountForHashing(b *testing.B) {
 
 	b.ResetTimer()
 	for _, test := range accountCases {
-		buf := make([]byte, test.acc.EncodingLengthForStorage())
+		buf := make([]byte, test.acc.EncodingLengthForHashing())
 		b.Run(fmt.Sprint(test.name), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				test.acc.EncodeForHashing(buf)
 			}
 		})
@@ -279,26 +275,24 @@ func BenchmarkDecodingAccount(b *testing.B) {
 	}
 
 	var decodedAccounts []Account
+	var benchI uint64
 	b.ResetTimer()
 	for _, test := range accountCases {
+		benchI = 0
 		b.Run(fmt.Sprint(test.name), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
-				println(test.name, i, b.N) //TODO: it just stucks w/o that print
-				b.StopTimer()
-				test.acc.Nonce = uint64(i)
-				test.acc.Balance.SetUint64(uint64(i))
+			for b.Loop() {
+				println(test.name, benchI, b.N) //TODO: it just stucks w/o that print
+				test.acc.Nonce = benchI
+				test.acc.Balance.SetUint64(benchI)
 				encodedAccount := SerialiseV3(test.acc)
-
-				b.StartTimer()
 
 				var decodedAccount Account
 				if err := DeserialiseV3(&decodedAccount, encodedAccount); err != nil {
 					b.Fatal("cant decode the account", err, encodedAccount)
 				}
 
-				b.StopTimer()
 				decodedAccounts = append(decodedAccounts, decodedAccount)
-				b.StartTimer()
+				benchI++
 			}
 		})
 
@@ -347,28 +341,25 @@ func BenchmarkDecodingIncarnation(b *testing.B) { // V2 version of bench was a p
 	}
 
 	var decodedIncarnations []uint64
+	var benchI uint64
 	b.ResetTimer()
 	for _, test := range accountCases {
+		benchI = 0
 		b.Run(fmt.Sprint(test.name), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
-				println(test.name, i, b.N) //TODO: it just stucks w/o that print
-				b.StopTimer()
+			for b.Loop() {
+				println(test.name, benchI, b.N) //TODO: it just stucks w/o that print
 
-				test.acc.Nonce = uint64(i)
-				test.acc.Balance.SetUint64(uint64(i))
+				test.acc.Nonce = benchI
+				test.acc.Balance.SetUint64(benchI)
 				encodedAccount := SerialiseV3(test.acc)
-
-				b.StartTimer()
 
 				decodedAcc := Account{}
 				if err := DeserialiseV3(&decodedAcc, encodedAccount); err != nil {
 					b.Fatal("can't decode the incarnation", err, encodedAccount)
 				}
 
-				b.StopTimer()
 				decodedIncarnations = append(decodedIncarnations, decodedAcc.Incarnation)
-
-				b.StartTimer()
+				benchI++
 			}
 		})
 	}
@@ -419,7 +410,7 @@ func BenchmarkRLPEncodingAccount(b *testing.B) {
 	b.ResetTimer()
 	for _, test := range accountCases {
 		b.Run(fmt.Sprint(test.name), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				if err := test.acc.EncodeRLP(io.Discard); err != nil {
 					b.Fatal("cant encode the account", err, test)
 				}

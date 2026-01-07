@@ -592,7 +592,7 @@ func BenchmarkEncodeConcurrentInterface(b *testing.B) {
 			defer wg.Done()
 
 			var buffer bytes.Buffer
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				buffer.Reset()
 				err := Encode(&buffer, value)
 				if err != nil {

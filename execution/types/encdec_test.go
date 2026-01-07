@@ -659,7 +659,7 @@ func BenchmarkHeaderRLP(b *testing.B) {
 	var buf bytes.Buffer
 	b.Run(`Encode`, func(b *testing.B) {
 		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			buf.Reset()
 			header.EncodeRLP(&buf)
 		}
@@ -669,7 +669,7 @@ func BenchmarkHeaderRLP(b *testing.B) {
 		buf.Reset()
 		header.EncodeRLP(&buf)
 		var v Header
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			rlp.DecodeBytes(buf.Bytes(), &v)
 		}
 	})
